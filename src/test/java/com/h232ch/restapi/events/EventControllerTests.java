@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // 테스트코드는 SpringBootTest를 사용하는 것을 추천 이유는 @WebMvcTest에서는 관련 빈을 모두 목킹해줘야하고 그값의 입력되는 값또한 Mokito로 지정해줘야해서 번거롭고
 // 코드를 변경할때마다 관리해줘야해서 공수가 많이 든다.
 // @SpringBootTest는 프로덕환경과 가장 가까운 테스트 환경이다. (실제 빈이 모두 등록되며 사용 가능)
+// @SpringBootTest는 통합테스트 개념이다. (MockMVC는 슬라이싱 테스트 성격을띔)
 @AutoConfigureMockMvc
 public class EventControllerTests {
     
@@ -51,7 +52,8 @@ public class EventControllerTests {
     @Test
     public void createEvent() throws Exception {
 
-        Event event = Event.builder()
+//        Event event = Event.builder() // 이상태에서는 id, free등의 입력불가한 값을 입력할 수 있음
+        EventDto event = EventDto.builder()
                 .name("Srping")
                 .description("REST API Development with Spring")
                 .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
@@ -61,10 +63,10 @@ public class EventControllerTests {
                 .maxPrice(200)
                 .limitOfEnrollment(100)
                 .location("Ganam")
-                .id(100) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다. -> EventController에 EventDto를 생성하여 파라메터로 받게하면 해당 값을 안받음
-                .free(true) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
-                .offline(true) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
-                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .id(100) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다. -> EventController에 EventDto를 생성하여 파라메터로 받게하면 해당 값을 안받음
+//                .free(true) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .offline(true) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
                 .build();
 
 //        event.setId(10);
@@ -91,8 +93,40 @@ public class EventControllerTests {
                 .andExpect(jsonPath("id").value(Matchers.not(100)))
                 .andExpect(jsonPath("free").value(Matchers.not(true)))
                 .andExpect(jsonPath("eventStatus").value(Matchers.not(EventStatus.DRAFT)));
+    }
 
 
         // 원래는 이러한 테스트 코드를 먼저 작성하고 class를 작성해야 올바른 TDD.
+
+
+    @Test
+    public void createEvent_Bad_Request() throws Exception { // 위 방법과 다르게 입력값을 제한하는 방법 (Bad request 발생 시킴)
+        // 만약 EventController에 파라메터가 EventDto이고 여기에 존재하지않는 필드가 입력값으로 들어올 경우
+        // application.properties에 spring.jackson.deserialization.fail-on-unknown-properties=true; 값을 입력하여
+        // 존재하지않는 필드(id, free, offline 등)이 들어오면 Bad Radrequest를 날린다..!
+        Event event_v1 = Event.builder()
+                .name("Srping")
+                .description("REST API Development with Spring")
+                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
+                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+                .basePrice(100)
+                .maxPrice(200)
+                .limitOfEnrollment(100)
+                .location("Ganam")
+                .id(100) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다. -> EventController에 EventDto를 생성하여 파라메터로 받게하면 해당 값을 안받음
+                .free(true) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+                .offline(true) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+                .build();
+
+        mockMvc.perform(post("/api/events/")
+                .contentType(MediaType.APPLICATION_JSON)  // 요청에 JSON을 담아서 보내고 있다.
+                .accept(MediaTypes.HAL_JSON) // HAL_JSON을 응답받기를 원한다. (HAL, Hypertext Application Language)
+                .content(objectMapper.writeValueAsString(event_v1)) // 요청 본문에 Event 객체를 json형태로 변환해서 보냄
+        ) // post에서 Servlet 생성 (MockMvc)
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+        ;
     }
 }

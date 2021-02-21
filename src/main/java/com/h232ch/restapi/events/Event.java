@@ -32,7 +32,7 @@ public class Event {
     private boolean offline;
     private boolean free;
     @Enumerated(EnumType.STRING) // 기본값이 ODINAL인데 이는 Enum 요소의 숫자값으로 표현함 -> 추후 데이터 변경시 꼬일수있기에 STRING을 추천함
-    private EventStatus eventStatus;
+    private EventStatus eventStatus = EventStatus.DRAFT;
 
 
 }

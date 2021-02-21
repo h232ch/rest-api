@@ -2,6 +2,7 @@ package com.h232ch.restapi.events;
 
 import lombok.*;
 
+import javax.persistence.*;
 import java.security.cert.CertPathBuilder;
 import java.time.LocalDateTime;
 
@@ -13,8 +14,11 @@ import java.time.LocalDateTime;
 // 자바 Bean에서 동등성 비교를 위해 equals와 hashcode 메소드를 오버라이딩해서 사용하는데 위 애노테이션을 쓰면 자동으로 해당 메서드가 생성되어 사용 가능
 // of = "id" 라면 id 필드로 객체를 비교하는 메서드 생성
 // Lombok 애노테이션은 메타애노테이션으로 묶는것이 아직은 어려움 (스프링 기본 애노테이션은 묶을수 있음)
+@Entity
 public class Event {
 
+    @Id @GeneratedValue // 엔티티의 Primary Key 역할을 id으로 정해주고 자동으로 생성되도록 함
+    private Integer id;
     private String name;
     private String description;
     private LocalDateTime beginEnrollmentDateTime;
@@ -25,10 +29,10 @@ public class Event {
     private int basePrice;
     private int maxPrice;
     private int limitOfEnrollment;
-
-    private Integer id;
     private boolean offline;
     private boolean free;
-    private final EventStatus eventStatus = EventStatus.DRAFT;
+    @Enumerated(EnumType.STRING) // 기본값이 ODINAL인데 이는 Enum 요소의 숫자값으로 표현함 -> 추후 데이터 변경시 꼬일수있기에 STRING을 추천함
+    private EventStatus eventStatus;
+
 
 }

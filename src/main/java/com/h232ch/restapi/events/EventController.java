@@ -5,10 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.validation.Valid;
 import java.net.URI;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -24,22 +27,31 @@ public class EventController {
 
     private final ModelMapper modelMapper; // @bean으로 등록한 ModelMapper 빈을 불러옴
 
+    private final EventValidator eventValidator;
+
     @Autowired // 생성자가 1개이고 생성자로 받아올 파라메터가 빈으로 등록되어있다면 Autowired는 생략할수 있다. 스프링 4.3부터
-    public EventController(EventRepository eventRepository, ModelMapper modelMapper) {
+    public EventController(EventRepository eventRepository, ModelMapper modelMapper, EventValidator eventValidator) {
         this.eventRepository = eventRepository;
         this.modelMapper = modelMapper;
+        this.eventValidator = eventValidator;
     }
 
 
 
     @PostMapping
 //    public ResponseEntity createEvent(@RequestBody Event event) { // ResponseEntity는 응답 상태코드, 헤더 본문을 리턴할 때 사용
-    public ResponseEntity createEvent(@RequestBody EventDto eventDto) { // 본문에 들어갈 객체를 eventDto로 변경 (Id, Free등 입력받지 않아아할 필드는 제외된 Dto로 해당 값은 입력불가)
+    public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors) { // 본문에 들어갈 객체를 eventDto로 변경 (Id, Free등 입력받지 않아아할 필드는 제외된 Dto로 해당 값은 입력불가)
+        // @RequestBody : 요청본문에서 메세지를 읽어드림, @ResponseBody : 응답본문에서 메세지를 읽어드림
+        // @Vaild 읽어들인 값을 검증함 -> EventDto에 조건에 따라 (@NotNull.....)
 
 //        Event event = Event.builder() // eventDto로 파라메터를 받고 이후 Event 객체로 컨버팅해줘야 함 그러나 이는 번거롭기 때문에 modelMapper를 사용해서 컨버팅 작업 수행
 //                .name(eventDto.getName())
 //                .description(eventDto.getDescription())
 //                .build();
+
+        if (errors.hasErrors()) { // @Vaild 검증시 에러가 발생한다면?
+            return ResponseEntity.badRequest().build(); // ResponseEntity에 BadRequest를 담아 리턴
+        }
 
         Event event = modelMapper.map(eventDto, Event.class); // eventDto를 Event 객체로 컨버팅
         Event newEvent = this.eventRepository.save(event);

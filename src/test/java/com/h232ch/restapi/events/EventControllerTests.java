@@ -1,6 +1,7 @@
 package com.h232ch.restapi.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.h232ch.restapi.common.TestDescription;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +51,7 @@ public class EventControllerTests {
     // 그래서 Mockito를 사용해서 save가 호출될 때 event를 리턴하라고 명시해줘야 함
 
     @Test
+    @TestDescription("정상적으로 이벤트를 생성하는 테스트")
     public void createEvent() throws Exception {
 
 //        Event event = Event.builder() // 이상태에서는 id, free등의 입력불가한 값을 입력할 수 있음
@@ -100,6 +102,7 @@ public class EventControllerTests {
 
 
     @Test
+    @TestDescription("입력 받을 수 없는 값을 사용한 경우에 에러가 발생하는 테스트")
     public void createEvent_Bad_Request() throws Exception { // 위 방법과 다르게 입력값을 제한하는 방법 (Bad request 발생 시킴)
         // 만약 EventController에 파라메터가 EventDto이고 여기에 존재하지않는 필드가 입력값으로 들어올 경우
         // application.properties에 spring.jackson.deserialization.fail-on-unknown-properties=true; 값을 입력하여
@@ -128,5 +131,41 @@ public class EventControllerTests {
                 .andDo(print())
                 .andExpect(status().isBadRequest())
         ;
+    }
+
+    @Test
+    @TestDescription("입력 값이 없는 경우 발생하는 에러")
+    public void createEvent_Bad_Request_Empty_Input() throws Exception {
+        EventDto eventDto = EventDto.builder()
+                .build();
+
+        this.mockMvc.perform(post("/api/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(this.objectMapper.writeValueAsString(eventDto)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @TestDescription("입력값이 잘못된 경우 발생하는 에러")
+    public void createEvent_Bad_Request_Bad_Input() throws Exception { // 아래 테스트는 위의 empty 테스트와 같은 @Vaild + EventDto JSR 303 방식으로 해결이 안된다.
+        EventDto eventDto = EventDto.builder()
+                .name("Srping")
+                .description("REST API Development with Spring")
+                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 26, 14, 21)) // 시작 날짜는 종료 날짜보다 작아야 함 (오류 상황)
+                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+                .beginEventDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
+                .endEventDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
+                .basePrice(10000) // base는 max보다 작아야 함 (오류 상황) vaildation을 만들어서 검증해야 함
+                .maxPrice(200)
+                .limitOfEnrollment(100)
+                .location("Ganam")
+                .build();
+
+        this.mockMvc.perform(post("/api/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(this.objectMapper.writeValueAsString(eventDto)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
     }
 }

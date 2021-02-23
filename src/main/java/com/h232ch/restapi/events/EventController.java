@@ -53,6 +53,12 @@ public class EventController {
             return ResponseEntity.badRequest().build(); // ResponseEntity에 BadRequest를 담아 리턴
         }
 
+        eventValidator.vaildate(eventDto, errors);
+
+        if (errors.hasErrors()) { // @Vaild 검증시 에러가 발생한다면?
+            return ResponseEntity.badRequest().build(); // ResponseEntity에 BadRequest를 담아 리턴
+        }
+
         Event event = modelMapper.map(eventDto, Event.class); // eventDto를 Event 객체로 컨버팅
         Event newEvent = this.eventRepository.save(event);
 //        URI createdUri = linkTo(methodOn(EventController.class).createEvent(null)).slash("{id}").toUri(); // PostMapping에 URL을 생성할 떄

@@ -15,10 +15,10 @@ public class EventValidator {
         }
 
         LocalDateTime endEventDateTime = eventDto.getEndEventDateTime();
-        if (endEventDateTime.isBefore(eventDto.getBeginEventDateTime()) ||
-                endEventDateTime.isBefore(eventDto.getCloseEnrollmentDateTime()) ||
-                endEventDateTime.isBefore(eventDto.getBeginEnrollmentDateTime())) {
-            errors.rejectValue("endEventDataTime", "wrongVaule", "EndEventDataTime is wrong");
+        if (endEventDateTime.isBefore(eventDto.getEndEventDateTime()) ||
+        endEventDateTime.isBefore(eventDto.getCloseEnrollmentDateTime()) ||
+        endEventDateTime.isBefore(eventDto.getBeginEnrollmentDateTime())) {
+            errors.rejectValue("endEventDateTime", "wrongValue", "EndEventDateTime is wrong");
         }
 
         // TODO: 2/23/2021 나머지 데이터들도 검증해야 함

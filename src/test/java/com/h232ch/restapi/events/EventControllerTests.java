@@ -159,13 +159,19 @@ public class EventControllerTests {
                 .basePrice(10000) // base는 max보다 작아야 함 (오류 상황) vaildation을 만들어서 검증해야 함
                 .maxPrice(200)
                 .limitOfEnrollment(100)
-                .location("Ganam")
+                .location("GangNam")
                 .build();
 
         this.mockMvc.perform(post("/api/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(this.objectMapper.writeValueAsString(eventDto)))
                 .andDo(print())
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].objectName").exists())
+                .andExpect(jsonPath("$[0].filed").exists())
+                .andExpect(jsonPath("$[0].defaultMessage").exists())
+                .andExpect(jsonPath("$[0].code").exists())
+                .andExpect(jsonPath("$[0].rejectedValue").exists())
+        ;
     }
 }

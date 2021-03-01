@@ -75,7 +75,8 @@ public class EventController {
         // 아래와 같이 LinkTo 기능을 이용해서 응답값에 릴레이션과 링크를 추가해주는 기능을 사용한다.
         EventResource eventResource = new EventResource(event);
         eventResource.add(linkTo(EventController.class).withRel("query-events")); // 이벤트 쿼리 링크
-        eventResource.add(selfLinkBuilder.withSelfRel()); // 셀프 링크
+//        eventResource.add(selfLinkBuilder.withSelfRel()); // 셀프 링크는 EventResource에서 추가해주는게 편하다 (컨트롤로에 구성시 매번 추가해야 함)
+        // linkTo로 추가되는 항목은 웬만하면 EventResource에 추가해주는게 좋음
         eventResource.add(selfLinkBuilder.withRel("update-event")); // 수정 쿼리 링크 (Put 요청)
 
         return ResponseEntity.created(createdUri).body(eventResource); // 헤더에는 LinkTO에 입력된 값이 들어가고, 응답 본문에는 Event 객체가 Json 형태로 보여진다.

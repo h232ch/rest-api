@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -61,6 +62,7 @@ public class EventControllerTests {
                 .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
                 .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
                 .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
                 .basePrice(100)
                 .maxPrice(200)
                 .limitOfEnrollment(100)
@@ -92,9 +94,16 @@ public class EventControllerTests {
                 .andExpect(header().exists(HttpHeaders.LOCATION))
 //                .andExpect(header().string("Content-Type", "application/hal+json")); // 아래는 Type Safe 반식
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
-                .andExpect(jsonPath("id").value(Matchers.not(100)))
+//                .andExpect(jsonPath("id").value(Matchers.not(100)))
                 .andExpect(jsonPath("free").value(Matchers.not(true)))
-                .andExpect(jsonPath("eventStatus").value(Matchers.not(EventStatus.DRAFT)));
+                .andExpect(jsonPath("offline").value(true))
+                .andExpect(jsonPath("eventStatus").value(Matchers.not(EventStatus.DRAFT)))
+                .andExpect(jsonPath("_links.self").exists()) // HEATOS
+//                .andExpect(jsonPath("_links.profile").exists())
+                .andExpect(jsonPath("_links.update-event").exists())
+                .andExpect(jsonPath("_links.query-events").exists())
+
+        ;
     }
 
 
@@ -152,26 +161,32 @@ public class EventControllerTests {
         EventDto eventDto = EventDto.builder()
                 .name("Srping")
                 .description("REST API Development with Spring")
-                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 26, 14, 21)) // 시작 날짜는 종료 날짜보다 작아야 함 (오류 상황)
-                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
-                .beginEventDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
-                .endEventDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
-                .basePrice(10000) // base는 max보다 작아야 함 (오류 상황) vaildation을 만들어서 검증해야 함
-                .maxPrice(200)
+                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
+                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+                .basePrice(100)
+                .maxPrice(20)
                 .limitOfEnrollment(100)
-                .location("GangNam")
+                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
+                .location("Ganam")
+//                .id(100) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다. -> EventController에 EventDto를 생성하여 파라메터로 받게하면 해당 값을 안받음
+//                .free(true) // 이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .offline(true) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
                 .build();
 
         this.mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(this.objectMapper.writeValueAsString(eventDto)))
+                .contentType(MediaType.APPLICATION_JSON) //Json 형태로 보낸다 (그렇기 때문에 ObjectMapper가 EventDto 객체를 Json으로 변환해서 본문에 넣어보냄
+                .content(this.objectMapper.writeValueAsString(eventDto))) //objectMapper 내부에 BeanSerialize를 사용해서 bean 형태의 eventDto를 json으로 변환해줌
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$[0].objectName").exists())
-                .andExpect(jsonPath("$[0].filed").exists())
-                .andExpect(jsonPath("$[0].defaultMessage").exists())
-                .andExpect(jsonPath("$[0].code").exists())
-                .andExpect(jsonPath("$[0].rejectedValue").exists())
+//                .andExpect(jsonPath("$[0].objectName").exists())
+////                .andExpect(jsonPath("$[0].filed").exists())
+//                .andExpect(jsonPath("$[0].defaultMessage").exists())
+//                .andExpect(jsonPath("$[0].code").exists())
+//                .andExpect(jsonPath("$[0].rejectedValue").exists())
         ;
     }
+
+
 }

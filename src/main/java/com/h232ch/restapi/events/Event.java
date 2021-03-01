@@ -35,4 +35,18 @@ public class Event {
     private EventStatus eventStatus = EventStatus.DRAFT;
 
 
+    public void update() {
+        // Update free
+        if (this.basePrice == 0 && this.maxPrice == 0) {
+            this.free = true;
+        } else {
+            this.free = false;
+        }
+
+        if (this.location == null || this.location.isBlank()) { // Blank는 자바 11에 추가됨 (Location이 비어있는지?) 공백까지 확인해줌
+            this.offline = false;
+        } else {
+            this.offline = true;
+        }
+    }
 }

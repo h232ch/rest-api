@@ -30,6 +30,6 @@ public class EventResource extends EntityModel<Event> {
     public EventResource(Event event, Link... links) {
         super(event, links);
 //        add(new Link("http://loalhost:8080/api/events" + event.getId())); // 이것과 동일함(아래) 하지만 타입세이프하지않고 Controller의 RequestMapping 주소 변경시 일일히 변경해야함
-        add(linkTo(EventController.class).slash(event.getId()).withSelfRel());
+        add(linkTo(EventController.class).slash(event.getId()).withSelfRel()); // 이 링크는 셀프 링크이다. (나 자신을 가르키는 링크)
     }
 }

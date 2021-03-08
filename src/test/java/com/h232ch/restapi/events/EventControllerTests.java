@@ -1,6 +1,7 @@
 package com.h232ch.restapi.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.h232ch.restapi.common.RestDocsConfiguration;
 import com.h232ch.restapi.common.TestDescription;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -8,20 +9,31 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.in;
+import static org.springframework.restdocs.headers.HeaderDocumentation.*;
+import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
+import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -33,8 +45,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // @SpringBootTest는 프로덕환경과 가장 가까운 테스트 환경이다. (실제 빈이 모두 등록되며 사용 가능)
 // @SpringBootTest는 통합테스트 개념이다. (MockMVC는 슬라이싱 테스트 성격을띔)
 @AutoConfigureMockMvc
+@AutoConfigureRestDocs // RESTDocs를 이용하기 위해 추가
+@Import(RestDocsConfiguration.class) // RestDocs 설정값을 지정한 클래스 로드
 public class EventControllerTests {
-    
+
     @Autowired
     MockMvc mockMvc; // 슬라이싱 테스트 장점 (빠르다, 단위 테스트로 보기에는 어렵다, DataMapper, Handler 등이 생성되기 때문)
     // Spring MVC : Spring MVC 테스트를 위해 핵심적인 클래스
@@ -50,6 +64,11 @@ public class EventControllerTests {
 //    EventRepository eventRepository; // 이벤트 레파시토리의 테스트용 빈을 생성해줘야함 (@WebMvcTest는 웹과 관련된 기능만 제공하지 빈까지 모두 자동으로 등록해주지 않음)
     // 이 객체는 Mock(가짜) 객체이기 때문에 Save 등의 메서드를 사용해도 Null값이 반환됨 (껍데기만 있는 객체임)
     // 그래서 Mockito를 사용해서 save가 호출될 때 event를 리턴하라고 명시해줘야 함
+
+    @Autowired
+    EventRepository eventRepository;
+
+    // 이벤트 레포시토리를 주입받는다.
 
     @Test
     @TestDescription("정상적으로 이벤트를 생성하는 테스트")
@@ -102,12 +121,60 @@ public class EventControllerTests {
 //                .andExpect(jsonPath("_links.profile").exists())
                 .andExpect(jsonPath("_links.update-event").exists())
                 .andExpect(jsonPath("_links.query-events").exists())
+                .andDo(document("create-event", // 스니펫을 추가하여 link, requestHeader, euqestFileds 등 문서조각을 생성함 Spring REST DOCS
+                        links(
+                                linkWithRel("self").description("link to self"),
+                                linkWithRel("query-events").description("link to query events"),
+                                linkWithRel("update-event").description("link to update an existing event"),
+                                linkWithRel("profile").description("link to profile")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.ACCEPT).description("accept header"),
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("content header")
+                        ),
+                        requestFields(
+                                fieldWithPath("name").description("Name of new event"),
+                                fieldWithPath("location").description("location of new event"),
+                                fieldWithPath("description").description("description of new event"),
+                                fieldWithPath("beginEnrollmentDateTime").description("beginEnrollmentDateTime of new event"),
+                                fieldWithPath("closeEnrollmentDateTime").description("closeEnrollmentDateTime of new event"),
+                                fieldWithPath("beginEventDateTime").description("beginEventDateTime of new event"),
+                                fieldWithPath("endEventDateTime").description("endEventDateTime of new event"),
+                                fieldWithPath("basePrice").description("basePrice of new event"),
+                                fieldWithPath("maxPrice").description("maxPrice of new event"),
+                                fieldWithPath("limitOfEnrollment").description("limitOfEnrollment of new event")
+                        ),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.LOCATION).description("location heaser"),
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("content header")
+                        ),
+                        responseFields( // relaxedResponseFields는 사용하지 않는것이 좋다 (추후 변경 발생시 누락이 발생됨)
+                                fieldWithPath("id").description("id of new event"),
+                                fieldWithPath("name").description("Name of new event"),
+                                fieldWithPath("location").description("location of new event"),
+                                fieldWithPath("description").description("description of new event"),
+                                fieldWithPath("beginEnrollmentDateTime").description("beginEnrollmentDateTime of new event"),
+                                fieldWithPath("closeEnrollmentDateTime").description("closeEnrollmentDateTime of new event"),
+                                fieldWithPath("beginEventDateTime").description("beginEventDateTime of new event"),
+                                fieldWithPath("endEventDateTime").description("endEventDateTime of new event"),
+                                fieldWithPath("basePrice").description("basePrice of new event"),
+                                fieldWithPath("maxPrice").description("maxPrice of new event"),
+                                fieldWithPath("limitOfEnrollment").description("limitOfEnrollment of new event"),
+                                fieldWithPath("free").description("free of new event"),
+                                fieldWithPath("offline").description("offline of new event"),
+                                fieldWithPath("eventStatus").description("offline of new event"),
+                                fieldWithPath("_links.self.href").description("offline of new event"),
+                                fieldWithPath("_links.query-events.href").description("offline of new event"),
+                                fieldWithPath("_links.update-event.href").description("offline of new event"),
+                                fieldWithPath("_links.profile.href").description("profile of new event")
+                        )
+                ));
 
         ;
     }
 
 
-        // 원래는 이러한 테스트 코드를 먼저 작성하고 class를 작성해야 올바른 TDD.
+    // 원래는 이러한 테스트 코드를 먼저 작성하고 class를 작성해야 올바른 TDD.
 
 
     @Test
@@ -180,13 +247,38 @@ public class EventControllerTests {
                 .content(this.objectMapper.writeValueAsString(eventDto))) //objectMapper 내부에 BeanSerialize를 사용해서 bean 형태의 eventDto를 json으로 변환해줌
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-//                .andExpect(jsonPath("$[0].objectName").exists())
-////                .andExpect(jsonPath("$[0].filed").exists())
-//                .andExpect(jsonPath("$[0].defaultMessage").exists())
-//                .andExpect(jsonPath("$[0].code").exists())
+                .andExpect(jsonPath("content[0].objectName").exists())
+//                .andExpect(jsonPath("$[0].filed").exists())
+                .andExpect(jsonPath("content[0].defaultMessage").exists())
+                .andExpect(jsonPath("content[0].code").exists())
 //                .andExpect(jsonPath("$[0].rejectedValue").exists())
+                .andExpect(jsonPath("_links.index").exists()) // Error발생시 EventController에서는 ErrorResource를 리턴하는데
+        // links.index는 ErrorResource 생성시 추가되는 링크이고 우리는 에러 발생시 해당 링크를 통해 /api로 이동할 수 있다.
         ;
     }
 
+    @Test
+    @TestDescription("30개의 이벤트를 10개씩 두번째 페이지 조회하기")
+    public void queryEvent() throws Exception {
+        // Given
+        IntStream.range(0, 30).forEach(i ->{
+            this.generateEvent(i); // IntStream.range : for문과 동일, 이벤트 번호를 순회하면서 요청
+        });
 
+        // When
+        this.mockMvc.perform(get("/api/events")
+                    .param("page", "1")
+                    .param("size", "10")
+                    .param("sort", "name,DESC")) // 0부터 1페이지 (1은 2페이지)
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    private void generateEvent(int index) {
+        Event event = Event.builder()
+                .name("event" + index)
+                .description("test event")
+                .build();
+        this.eventRepository.save(event);
+    }
 }

@@ -15,13 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -92,12 +90,100 @@ public class EventController {
     @GetMapping
     public ResponseEntity queryEvent(Pageable pageable, PagedResourcesAssembler<Event> assembler) { // pagealbe은 페이지 사이즈, 솔트 등의 정보들을 입력받을 수 있음
         Page<Event> page = this.eventRepository.findAll(pageable); // 리파시토리에서 가져온 pageable 데이터를
-        var pagedModel = assembler.toModel(page); // 모델로 변경하여 넘겨줌 (변경시 각 페이지에 링크정보를 넘겨줌 (다음페이지, 이전페이지 등)
+        var pagedModel = assembler.toModel(page, e -> new EventResource(e)); // 모델로 변경하여 넘겨줌 (변경시 각 페이지에 링크정보를 넘겨줌 (다음페이지, 이전페이지 등)
+        // e -> new EventResource(e)를 붙이면 각 응답에 대한 링크도 넘겨줌
+        pagedModel.add(new Link("/docs/index.html#resources-events-list").withRel("profile")); // 프로파일 링크를 추가함
+        // 프로파일 링크가 추가되고 테스트에서 REST 문서를 생성할 수 있음
         return ResponseEntity.ok(pagedModel); // ResponseEntity의 바디에 넣어줌 (pageable을 모두 찾는다?)
+        // 모델형태의 응답은 뷰에서 응답할 때 json 객체로 다시 변환한다.
 
     }
 
     private ResponseEntity<ErrorsResource> badRequest(Errors errors) { // errors를 받아서 본문에 넣어주는데 이를 리소스로 변환하고
         return ResponseEntity.badRequest().body(new ErrorsResource(errors)); // 리소스를 변환할 때 인덱스를 추가하도록 함 (ErrorResource 생성자)
     }
+
+
+    @GetMapping("{id}") // Id에 대한 Path variable을 받는다.
+    public ResponseEntity getEvent(@PathVariable Integer id) { // PathVariable 변수를 id 파라메터로 받는다.
+        Optional<Event> optionalEvent = this.eventRepository.findById(id); // 레파시토리에서 id에 해당하는 객체를 가저와서 Optional 객체에 넣는다.
+        if (optionalEvent.isEmpty()) { // 만약 객체가 존재하지 않는다면?
+            return ResponseEntity.notFound().build(); // 404 응답
+        }
+
+        Event event = optionalEvent.get(); // 객체가 존재한다면 객체를 가져와서 Event 객체에 넣어준다.
+        EventResource eventResource = new EventResource(event); // 가져온 이벤트 객체를 EventResource 객체로 만들어 Self 링크를 추가하도록 한다.
+        eventResource.add(new Link("/docs/index.html#resources-events-get").withRel("profile")); // 더해서 Profile 링크도 추가하고 테스트 코드에서 document를 만들어준다.
+        return ResponseEntity.ok(eventResource); // 마지막으로 본문에 eventResource를 담아서 전달한다. (객체는 json 형태로 변환되어 응답됨)
+    }
+
+//    @PutMapping("{id}")
+//    public ResponseEntity editEvent(@PathVariable Integer id, @RequestBody @Valid EventEditDto eventEditDto, Errors errors) {
+//        Optional<Event> optionalEvent = eventRepository.findById(id);
+//        if (optionalEvent.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//
+//        if (errors.hasErrors()) {
+//            return badRequest(errors);
+//        }
+//
+//        eventValidator.vaildateEdit(eventEditDto, errors);
+//
+//        if (errors.hasErrors()) {
+//            return badRequest(errors);
+//        }
+//
+//        Event event = modelMapper.map(eventEditDto, Event.class);
+//        event.update();
+//
+//        optionalEvent.ifPresent(selectEvent -> {
+//            selectEvent.setName(event.getName());
+//            Event newEvent = eventRepository.save(selectEvent);
+//        });
+//
+//
+//
+//        Optional<Event> editEvent = this.eventRepository.findById(id);
+//        Event newEvent = editEvent.get();
+//
+//
+//        WebMvcLinkBuilder selfLinkBuilder = linkTo(EventController.class).slash(newEvent.getId());
+//        URI createUri = selfLinkBuilder.toUri();
+//
+//        EventResource eventResource = new EventResource(newEvent);
+//        eventResource.add(selfLinkBuilder.withRel("update-event"));
+//
+//        return ResponseEntity.ok(eventResource);
+//    }
+
+    @PutMapping("{id}")
+    public ResponseEntity updateEvent(@PathVariable Integer id,
+                                      @RequestBody @Valid EventDto eventDto,
+                                      Errors errors) {
+        Optional<Event> optionalEvent = this.eventRepository.findById(id);
+        if (optionalEvent.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (errors.hasErrors()) { // 여기서는 EventDto에 명시된 조건에 부합하지 않는지를 찾아냄 (@Valid)
+            return ResponseEntity.badRequest().build();
+        }
+
+        this.eventValidator.vaildate(eventDto, errors); // 여기서는 EventVaildator에 명ㅅ한 비즈니스 로직이 잘 수행되는지 확인함
+
+        if (errors.hasErrors()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Event existingEvent = optionalEvent.get();
+        this.modelMapper.map(eventDto, existingEvent); // 이미 존재하는 event 객체에 eventDto 객체의 값을 옮겨 닮아줌
+        Event savedEvent = this.eventRepository.save(existingEvent);// 옮겨담은 객체를 저장한다 (ID값이 유니크하여 덮어씌워짐)
+
+        EventResource eventResource = new EventResource(savedEvent);
+        eventResource.add(new Link("/docs/index.html#resources-events-update").withRel("profile"));
+
+        return ResponseEntity.ok(eventResource);
+    }
+
 }

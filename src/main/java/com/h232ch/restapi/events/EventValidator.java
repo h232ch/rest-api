@@ -24,4 +24,21 @@ public class EventValidator {
 
         // TODO: 2/23/2021 나머지 데이터들도 검증해야 함
     }
+
+    public void vaildateEdit(EventEditDto eventEditDto, Errors errors) {
+        if (eventEditDto.getBasePrice() > eventEditDto.getMaxPrice() && eventEditDto.getMaxPrice() != 0) {
+            errors.rejectValue("basePrice", "wrongValue", "BasePrice is wrong");  // 이 에러는 errors 필드 에러에 입력됨
+            errors.rejectValue("maxPrice", "wrongValue", "MaxPrice is wrong");
+            errors.reject("wrongPrices","Prices is wrong"); // 이 에러는 errors 글로벌 에러에 입력됨
+        }
+
+        LocalDateTime endEventDateTime = eventEditDto.getEndEventDateTime();
+        if (endEventDateTime.isBefore(eventEditDto.getEndEventDateTime()) ||
+                endEventDateTime.isBefore(eventEditDto.getCloseEnrollmentDateTime()) ||
+                endEventDateTime.isBefore(eventEditDto.getBeginEnrollmentDateTime())) {
+            errors.rejectValue("endEventDateTime", "wrongValue", "EndEventDateTime is wrong");
+        }
+
+        // TODO: 2/23/2021 나머지 데이터들도 검증해야 함
+    }
 }

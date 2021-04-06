@@ -1,5 +1,6 @@
 package com.h232ch.restapi.events;
 
+import com.h232ch.restapi.accounts.Account;
 import lombok.*;
 
 import javax.persistence.*;
@@ -33,6 +34,9 @@ public class Event {
     private boolean free;
     @Enumerated(EnumType.STRING) // 기본값이 ODINAL인데 이는 Enum 요소의 숫자값으로 표현함 -> 추후 데이터 변경시 꼬일수있기에 STRING을 추천함
     private EventStatus eventStatus = EventStatus.DRAFT;
+
+    @ManyToOne
+    private Account manager; // 이벤트에서만 account를 참조할 수 있도록 만들어줌
 
 
     public void update() {

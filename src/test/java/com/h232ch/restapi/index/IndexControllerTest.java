@@ -1,5 +1,6 @@
 package com.h232ch.restapi.index;
 
+import com.h232ch.restapi.common.BaseControllerTest;
 import com.h232ch.restapi.common.RestDocsConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,15 +14,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*; // 스태틱으로 넣어줘야 함;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@AutoConfigureMockMvc
-@AutoConfigureRestDocs
-@Import(RestDocsConfiguration.class)
-public class IndexControllerTest {
+//@RunWith(SpringRunner.class)
+//@SpringBootTest
+//@AutoConfigureMockMvc
+//@AutoConfigureRestDocs
+//@Import(RestDocsConfiguration.class)
+// BaseControllerTest
+public class IndexControllerTest extends BaseControllerTest {
 
-    @Autowired
-    MockMvc mockMvc;
+//    @Autowired
+//    MockMvc mockMvc;
 
     @Test
     public void index() throws Exception {

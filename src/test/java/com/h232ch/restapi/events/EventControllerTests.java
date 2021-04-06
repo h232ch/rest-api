@@ -1,6 +1,7 @@
 package com.h232ch.restapi.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.h232ch.restapi.common.BaseControllerTest;
 import com.h232ch.restapi.common.RestDocsConfiguration;
 import com.h232ch.restapi.common.TestDescription;
 import org.hamcrest.Matchers;
@@ -34,36 +35,39 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringRunner.class) // 스프링 Junit 테스트 환경 구성
-//@WebMvcTest // 웹 테스트 환경 구성 -> MockMVC 사용 가능 (가짜 요청 및 응답) 웹과 관련된 테스트만 진행하여 슬라이싱 테스트라고 함
-@SpringBootTest // 실제 프로젝트 내에 존재하는 코드를 빈으로 등록하고 사용하는 테스트 방법
-// 테스트코드는 SpringBootTest를 사용하는 것을 추천 이유는 @WebMvcTest에서는 관련 빈을 모두 목킹해줘야하고 그값의 입력되는 값또한 Mokito로 지정해줘야해서 번거롭고
-// 코드를 변경할때마다 관리해줘야해서 공수가 많이 든다.
-// @SpringBootTest는 프로덕환경과 가장 가까운 테스트 환경이다. (실제 빈이 모두 등록되며 사용 가능)
-// @SpringBootTest는 통합테스트 개념이다. (MockMVC는 슬라이싱 테스트 성격을띔)
-@AutoConfigureMockMvc
-@AutoConfigureRestDocs // RESTDocs를 이용하기 위해 추가
-@Import(RestDocsConfiguration.class) // RestDocs 설정값을 지정한 클래스 로드
-public class EventControllerTests {
+//@RunWith(SpringRunner.class) // 스프링 Junit 테스트 환경 구성
+////@WebMvcTest // 웹 테스트 환경 구성 -> MockMVC 사용 가능 (가짜 요청 및 응답) 웹과 관련된 테스트만 진행하여 슬라이싱 테스트라고 함
+//@SpringBootTest // 실제 프로젝트 내에 존재하는 코드를 빈으로 등록하고 사용하는 테스트 방법
+//// 테스트코드는 SpringBootTest를 사용하는 것을 추천 이유는 @WebMvcTest에서는 관련 빈을 모두 목킹해줘야하고 그값의 입력되는 값또한 Mokito로 지정해줘야해서 번거롭고
+//// 코드를 변경할때마다 관리해줘야해서 공수가 많이 든다.
+//// @SpringBootTest는 프로덕환경과 가장 가까운 테스트 환경이다. (실제 빈이 모두 등록되며 사용 가능)
+//// @SpringBootTest는 통합테스트 개념이다. (MockMVC는 슬라이싱 테스트 성격을띔)
+//@AutoConfigureMockMvc
+//@AutoConfigureRestDocs // RESTDocs를 이용하기 위해 추가
+//@Import(RestDocsConfiguration.class) // RestDocs 설정값을 지정한 클래스 로드
+//public class EventControllerTests {
+public class EventControllerTests extends BaseControllerTest { // 테스트 코드를 간결하게 리팩터링하기 위해
+    // 애노테이션과 주입받는 빈을 BaseController에 기재하고 BaseController를 상속받으면 테스트 코드가 간결해지고
+    // 기존에 사용하던 기능을 모두 동일하게 사용가능하다.
 
-    @Autowired
-    MockMvc mockMvc; // 슬라이싱 테스트 장점 (빠르다, 단위 테스트로 보기에는 어렵다, DataMapper, Handler 등이 생성되기 때문)
+//    @Autowired
+//    MockMvc mockMvc; // 슬라이싱 테스트 장점 (빠르다, 단위 테스트로 보기에는 어렵다, DataMapper, Handler 등이 생성되기 때문)
     // Spring MVC : Spring MVC 테스트를 위해 핵심적인 클래스
     // 웹 서버를 띄우지 않기 때문에 조금 더 빠르지만 Dispatcher Servlet 을 따로 만들어야 하기 때문에 단위 테스트보다는 조금 더 걸림
 
     // accept header를 지정하여 사용하는게 베스트프랙티스 (이게 안되면 확장자로 구분 abc.json, abc.xml)
 
 
-    @Autowired
-    ObjectMapper objectMapper; // json으로 변환하는 클래스
+//    @Autowired
+//    ObjectMapper objectMapper; // json으로 변환하는 클래스
 
 //    @MockBean // @SpringBootTest 환경에서는 불필요함 (실제 환경과 같은 환경을 사용하기 때문에 프로덕코드에서 해당 빈을 생성하고 있다면 그것에 따라 움직임)
 //    EventRepository eventRepository; // 이벤트 레파시토리의 테스트용 빈을 생성해줘야함 (@WebMvcTest는 웹과 관련된 기능만 제공하지 빈까지 모두 자동으로 등록해주지 않음)
     // 이 객체는 Mock(가짜) 객체이기 때문에 Save 등의 메서드를 사용해도 Null값이 반환됨 (껍데기만 있는 객체임)
     // 그래서 Mockito를 사용해서 save가 호출될 때 event를 리턴하라고 명시해줘야 함
 
-    @Autowired
-    EventRepository eventRepository;
+//    @Autowired
+//    EventRepository eventRepository;
 
     // 이벤트 레포시토리를 주입받는다.
 
@@ -306,55 +310,55 @@ public class EventControllerTests {
 
     }
 
-    @Test
-    @TestDescription("수정하는 데이터가 정상일때")
-    public void editEvent201() throws Exception {
-
-        EventEditDto event = EventEditDto.builder()
-                .name("Srping Changed Name")
-                .description("REST API Development with Spring")
-                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
-                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
-                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
-                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
-                .basePrice(200)
-                .maxPrice(300)
-                .limitOfEnrollment(100)
-                .location("Ganam")
-                .free(true)
-                .offline(true)
-                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
-                .build();
-
-
-        Event testEvent = Event.builder()
-                .name("Srping")
-                .description("REST API Development with Spring")
-                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
-                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
-                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
-                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
-                .basePrice(200)
-                .maxPrice(300)
-                .limitOfEnrollment(100)
-                .location("Ganam")
-                .free(true)
-                .offline(true)
-                .eventStatus(EventStatus.PUBLISHED)
-                .build();
-
-
-        Event eventResult = this.eventRepository.save(testEvent);
-        System.out.println("TEST : " + eventResult.getId());
-
-        //When & THen
-        mockMvc.perform(put("/api/events/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaTypes.HAL_JSON)
-                .content(objectMapper.writeValueAsString(event)))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
+//    @Test
+//    @TestDescription("수정하는 데이터가 정상일때")
+//    public void editEvent201() throws Exception {
+//
+//        EventEditDto event = EventEditDto.builder()
+//                .name("Srping Changed Name")
+//                .description("REST API Development with Spring")
+//                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
+//                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
+//                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+//                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
+//                .basePrice(200)
+//                .maxPrice(300)
+//                .limitOfEnrollment(100)
+//                .location("Ganam")
+//                .free(true)
+//                .offline(true)
+//                .eventStatus(EventStatus.PUBLISHED) //이값은 계산되어서 백단에서 입력되는 값으로 입력되면 안된다.
+//                .build();
+//
+//
+//        Event testEvent = Event.builder()
+//                .name("Srping")
+//                .description("REST API Development with Spring")
+//                .beginEnrollmentDateTime(LocalDateTime.of(2021, 11, 23, 14, 21))
+//                .closeEnrollmentDateTime(LocalDateTime.of(2021, 11, 24, 14, 21))
+//                .beginEventDateTime(LocalDateTime.of(2021, 11, 25, 14, 21))
+//                .endEventDateTime(LocalDateTime.of(2021, 11, 26, 14, 21))
+//                .basePrice(200)
+//                .maxPrice(300)
+//                .limitOfEnrollment(100)
+//                .location("Ganam")
+//                .free(true)
+//                .offline(true)
+//                .eventStatus(EventStatus.PUBLISHED)
+//                .build();
+//
+//
+//        Event eventResult = this.eventRepository.save(testEvent);
+//        System.out.println("TEST : " + eventResult.getId());
+//
+//        //When & THen
+//        mockMvc.perform(put("/api/events/1")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .accept(MediaTypes.HAL_JSON)
+//                .content(objectMapper.writeValueAsString(event)))
+//                .andDo(print())
+//                .andExpect(status().isOk());
+//    }
 
 //    @Test
 //    @TestDescription("수정하려는 이벤트가 없는 경우")

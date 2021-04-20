@@ -1,6 +1,7 @@
 package com.h232ch.restapi.configs;
 
 import com.h232ch.restapi.accounts.AccountService;
+import com.h232ch.restapi.common.AppProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,6 +30,9 @@ public class AutoServerConfig extends AuthorizationServerConfigurerAdapter { // 
     @Autowired
     TokenStore tokenStore;
 
+    @Autowired
+    AppProperties appProperties;
+
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.passwordEncoder(passwordEncoder);
@@ -37,10 +41,10 @@ public class AutoServerConfig extends AuthorizationServerConfigurerAdapter { // 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
         clients.inMemory()
-                .withClient("myApp")
+                .withClient(appProperties.getClientId())
                 .authorizedGrantTypes("password", "refresh_token") // Grant Type을 refresh_token으로 지정
                 .scopes("read", "write")
-                .secret(this.passwordEncoder.encode("pass")) // secret (token의 시크릿값을 패스워드 인코더로 해싱처리)
+                .secret(this.passwordEncoder.encode(appProperties.getClientSecret())) // secret (token의 시크릿값을 패스워드 인코더로 해싱처리)
                 .accessTokenValiditySeconds(10 * 60) // 얼마동안 유효한지? 10분
                 .refreshTokenValiditySeconds(6 * 10 * 10); // 1 시간
 

@@ -4,6 +4,7 @@ package com.h232ch.restapi.configs;
 import com.h232ch.restapi.accounts.Account;
 import com.h232ch.restapi.accounts.AccountRole;
 import com.h232ch.restapi.accounts.AccountService;
+import com.h232ch.restapi.common.AppProperties;
 import com.h232ch.restapi.common.BaseControllerTest;
 import com.h232ch.restapi.common.TestDescription;
 import org.junit.Test;
@@ -23,6 +24,9 @@ public class AutoServerConfigTest extends BaseControllerTest { // Controller Tes
     @Autowired
     AccountService accountService;
 
+    @Autowired
+    AppProperties appProperties;
+
     @Test
     @TestDescription("인증 토큰을 발급 받는 테스트")
     public void getAuthToken() throws Exception { // Grant Type (토큰을 받아오는 방법) : password와 refresh Token 두가지 방법을 사용할 것
@@ -31,23 +35,23 @@ public class AutoServerConfigTest extends BaseControllerTest { // Controller Tes
 
 
         // Given
-        String username = "sh@naver.com";
-        String password = "sh";
-        Account sh = Account.builder()
-                .email(username)
-                .password(password)
-                .roles(Set.of(AccountRole.ADMIN, AccountRole.USER))
-                .build();
+//        String username = "sh@naver.com";
+//        String password = "sh";
+//        Account sh = Account.builder()
+//                .email(username)
+//                .password(password)
+//                .roles(Set.of(AccountRole.ADMIN, AccountRole.USER))
+//                .build();
 
-        this.accountService.saveAccount(sh);
+//        this.accountService.saveAccount(sh);
 
-        String clientId = "myApp";
-        String clientSecret = "pass";
+//        String clientId = "myApp";
+//        String clientSecret = "pass";
 
         this.mockMvc.perform(post("/oauth/token")
-                    .with(httpBasic(clientId, clientSecret)) // OAuth 요청 헤더를 만들기 위해 httpBasic을 이용한다 (아래는 OAuth password 타입 인증에 필요한 정보를 헤더에 담아 요청함)
-                    .param("username", username)
-                    .param("password", password)
+                    .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret())) // OAuth 요청 헤더를 만들기 위해 httpBasic을 이용한다 (아래는 OAuth password 타입 인증에 필요한 정보를 헤더에 담아 요청함)
+                    .param("username", appProperties.getUserUsername())
+                    .param("password", appProperties.getUserPassword())
                     .param("grant_type", "password")) // httpBasic 사용시 spring security test를 추가해야 함 (clientId와 Secret을 이용하여 Basic Auth 헤더를 만들었다)
                 .andDo(print())
                 .andExpect(status().isOk())

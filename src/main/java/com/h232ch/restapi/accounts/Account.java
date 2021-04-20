@@ -12,7 +12,10 @@ public class Account {
 
     @Id @GeneratedValue // @Id의 의미는 JPA의 Primary Key로 사용하겠다는 의미
     private Integer id;
+
+    @Column(unique = true) // 이메일에 해당하는 유저는 1개만 해당해야 함
     private String email;
+    
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER) // Set 객체에 대한 Fetch를 어떻게 할것인지 정한다.

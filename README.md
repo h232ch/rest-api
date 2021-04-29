@@ -1,6 +1,6 @@
 # RestAPI
 
-Simple RestAPI 서버
+Simple RestAPI 서버 구축중
 
 > 인프라 환경 : Docker, Postgres, SpringBoot.
 
